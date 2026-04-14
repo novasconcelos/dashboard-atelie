@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard de Vendas — Ateliê</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f4f0; color: #1a1a1a; min-height: 100vh; padding: 2rem 1rem; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; }
+  .top-bar h1 { font-size: 20px; font-weight: 500; }
+  .last-update { font-size: 11px; color: #9b9b97; margin-top: 2px; }
+  .refresh-btn { font-size: 12px; padding: 6px 14px; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.2); background: #fff; color: #444; cursor: pointer; }
+  .refresh-btn:hover { background: #f0efeb; }
+  .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .metric { background: #eceae4; border-radius: 8px; padding: 12px 14px; }
+  .metric .ml { font-size: 11px; color: #6b6b68; margin-bottom: 4px; }
+  .metric .mv { font-size: 20px; font-weight: 500; color: #1a1a1a; }
+  .metric .ms { font-size: 11px; color: #9b9b97; margin-top: 2px; }
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
+  .chart-box { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 1rem 1.25rem; }
+  .section { font-size: 13px; font-weight: 500; color: #1a1a1a; margin-bottom: 10px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; font-size: 12px; color: #6b6b68; }
+  .legend span { display: flex; align-items: center; gap: 4px; }
+  .legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .card { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+  .filters-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .filter-group { display: flex; gap: 4px; }
+  .fbtn { font-size: 11px; padding: 4px 10px; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.18); background: transparent; color: #6b6b68; cursor: pointer; transition: all .15s; }
+  .fbtn.active { background: #eceae4; color: #1a1a1a; font-weight: 500; }
+  select { font-size: 12px; padding: 4px 8px; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.18); background: #fff; color: #1a1a1a; cursor: pointer; }
+  .rank-bar { height: 6px; border-radius: 3px; background: #1D9E75; display: inline-block; vertical-align: middle; margin-right: 6px; }
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { font-size: 11px; font-weight: 500; color: #6b6b68; text-align: left; padding: 6px 8px; border-bottom: 0.5px solid rgba(0,0,0,0.08); white-space: nowrap; }
+  th.r, td.r { text-align: right; }
+  td { padding: 7px 8px; border-bottom: 0.5px solid rgba(0,0,0,0.06); color: #1a1a1a; vertical-align: middle; }
+  tr:hover td { background: #f9f9f7; }
+  .chip { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 500; }
+  .chip-pago { background: #E1F5EE; color: #085041; }
+  .chip-pend { background: #FAEEDA; color: #633806; }
+  .chip-cortesia { background: #EEEDFE; color: #3C3489; }
+  .loading { font-size: 13px; color: #6b6b68; padding: 2rem 0; text-align: center; }
+  .error-box { font-size: 13px; color: #791F1F; padding: 1rem; background: #FCEBEB; border-radius: 8px; margin-bottom: 1rem; }
+  @media(max-width: 600px) { .charts-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="top-bar">
+    <div>
+      <h1>Dashboard de vendas — Ateliê</h1>
+      <div class="last-update" id="lastUpdate">Carregando...</div>
+    </div>
+    <button class="refresh-btn" id="refreshBtn">Atualizar dados</button>
+  </div>
+
+  <div id="errorBox" style="display:none"></div>
+  <div id="loadingBox" class="loading">Buscando dados da planilha...</div>
+
+  <div id="content" style="display:none">
+    <div class="metric-grid" id="metrics"></div>
+
+    <div class="charts-row">
+      <div class="chart-box">
+        <div class="section" style="margin-bottom:8px">Vendas por status</div>
+        <div class="legend" id="leg-status"></div>
+        <div style="position:relative;height:160px"><canvas id="chartStatus" role="img" aria-label="Gráfico de status de pagamento">Distribuição por status.</canvas></div>
+      </div>
+      <div class="chart-box">
+        <div class="section" style="margin-bottom:8px">Situação dos pedidos</div>
+        <div class="legend" id="leg-sit"></div>
+        <div style="position:relative;height:160px"><canvas id="chartSit" role="img" aria-label="Gráfico de situação dos pedidos">Distribuição por situação.</canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
+        <div class="section" style="margin:0">Produtos vendidos</div>
+        <div class="filters-row">
+          <select id="selMes"><option value="todos">Todos os meses</option></select>
+          <div class="filter-group" id="sortBtns">
+            <button class="fbtn active" data-sort="receita">Por receita</button>
+            <button class="fbtn" data-sort="qtd">Por quantidade</button>
+          </div>
+        </div>
+      </div>
+      <div id="ranking"></div>
+    </div>
+
+    <div class="card">
+      <div class="section">Todas as vendas</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th><th>Produto</th><th>Cliente</th>
+              <th class="r">Valor</th><th>Status</th><th>Situação</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vStwozPUCnYfE3O-EJVpTrQtgdsttloV1O57Bw_WPLArse5TIUDozd48vz5rTid-Eartf3D92EczYhR/pub?gid=2115485472&single=true&output=csv';
+const PROXY = 'https://corsproxy.io/?';
+const CSV_URL = PROXY + encodeURIComponent(SHEETS_URL);
+
+let allVendas = [];
+let sortMode = 'receita';
+let mesFiltro = 'todos';
+let chartStatus = null, chartSit = null;
+
+const stColors = ['#1D9E75','#7F77DD','#EF9F27','#D85A30'];
+const sitColors = ['#1D9E75','#EF9F27','#7F77DD','#D85A30'];
+const chipMap = {pago:'chip-pago',cortesia:'chip-cortesia',pendente:'chip-pend'};
+const sitChipMap = {entregue:'chip-pago','ela retirar':'chip-pend',cortesia:'chip-cortesia'};
+
+function parseCSV(text){
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h=>h.trim().toLowerCase().replace(/['"]/g,''));
+  const rows = [];
+  for(let i=1;i<lines.length;i++){
+    const cols = lines[i].match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g)||[];
+    const clean = cols.map(c=>c.replace(/^"|"$/g,'').trim());
+    if(clean.every(c=>!c)) continue;
+    const obj = {};
+    headers.forEach((h,idx)=>{ obj[h]=clean[idx]||''; });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function parseValor(v){
+  if(!v) return 0;
+  return parseFloat(v.replace(/[R$\s.]/g,'').replace(',','.')) || 0;
+}
+
+function getMes(dataStr){
+  if(!dataStr) return '';
+  const parts = dataStr.split('/');
+  if(parts.length < 2) return '';
+  const m = parseInt(parts[1]);
+  const meses = {1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'};
+  return meses[m]||'';
+}
+
+function normalizeStatus(s){
+  if(!s) return '';
+  const l = s.toLowerCase().trim();
+  if(l.includes('pago')) return 'Pago';
+  if(l.includes('cortesia')) return 'Cortesia';
+  if(l.includes('pendente')) return 'Pendente';
+  return s.trim();
+}
+
+function normalizeSit(s){
+  if(!s) return '';
+  const l = s.toLowerCase().trim();
+  if(l.includes('entregue')||l==='entregue') return 'Entregue';
+  if(l.includes('retirar')) return 'Ela retirar';
+  if(l.includes('cortesia')) return 'Cortesia';
+  return s.trim();
+}
+
+async function fetchData(){
+  document.getElementById('loadingBox').style.display='block';
+  document.getElementById('content').style.display='none';
+  document.getElementById('errorBox').style.display='none';
+  document.getElementById('lastUpdate').textContent='Carregando...';
+  try {
+    const resp = await fetch(CSV_URL);
+    if(!resp.ok) throw new Error('Erro ao buscar planilha ('+resp.status+')');
+    const text = await resp.text();
+    const rows = parseCSV(text);
+    allVendas = rows
+      .filter(r=>r['data']||r['produtos']||r['clientes'])
+      .map(r=>({
+        data: r['data']||'',
+        mes: getMes(r['data']),
+        cod: r['cod_produto']||'',
+        produto: r['produtos']||'',
+        valor: parseValor(r['valor']),
+        status: normalizeStatus(r['status']),
+        sit: normalizeSit(r['situação']||r['situacao']||''),
+        cliente: r['clientes']||'',
+      }));
+    populateMeses();
+    render();
+    document.getElementById('loadingBox').style.display='none';
+    document.getElementById('content').style.display='block';
+    const now = new Date();
+    document.getElementById('lastUpdate').textContent='Atualizado às '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  } catch(e){
+    document.getElementById('loadingBox').style.display='none';
+    const eb = document.getElementById('errorBox');
+    eb.style.display='block';
+    eb.className='error-box';
+    eb.innerHTML='<strong>Não foi possível carregar os dados.</strong><br>Verifique se o link CSV está ativo na planilha.<br><small>'+e.message+'</small>';
+    document.getElementById('lastUpdate').textContent='Falha ao carregar';
+  }
+}
+
+function populateMeses(){
+  const meses = [...new Set(allVendas.map(v=>v.mes).filter(Boolean))];
+  const sel = document.getElementById('selMes');
+  sel.innerHTML='<option value="todos">Todos os meses</option>';
+  meses.forEach(m=>{
+    const opt = document.createElement('option');
+    opt.value=m; opt.textContent=m;
+    sel.appendChild(opt);
+  });
+  sel.value = mesFiltro!=='todos'&&meses.includes(mesFiltro)?mesFiltro:'todos';
+}
+
+function filteredVendas(){
+  return mesFiltro==='todos'?allVendas:allVendas.filter(v=>v.mes===mesFiltro);
+}
+
+function renderMetrics(fv){
+  const pagas = fv.filter(v=>v.status==='Pago');
+  const totalReceita = pagas.reduce((a,v)=>a+v.valor,0);
+  const ticketMedio = pagas.length?totalReceita/pagas.length:0;
+  const cortesias = fv.filter(v=>v.status==='Cortesia').length;
+  document.getElementById('metrics').innerHTML=`
+    <div class="metric"><div class="ml">Receita total</div><div class="mv">R$ ${totalReceita.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="ms">vendas pagas</div></div>
+    <div class="metric"><div class="ml">Pedidos</div><div class="mv">${fv.length}</div><div class="ms">${cortesias} cortesia(s)</div></div>
+    <div class="metric"><div class="ml">Ticket médio</div><div class="mv">R$ ${ticketMedio.toFixed(2).replace('.',',')}</div><div class="ms">pedidos pagos</div></div>
+    <div class="metric"><div class="ml">Clientes únicos</div><div class="mv">${new Set(fv.map(v=>v.cliente).filter(Boolean)).size}</div><div class="ms">neste período</div></div>
+  `;
+}
+
+function renderCharts(fv){
+  const sitCounts={};
+  fv.forEach(v=>{const k=v.sit||'Indefinido';sitCounts[k]=(sitCounts[k]||0)+1;});
+  const sitLabels=Object.keys(sitCounts),sitData=Object.values(sitCounts);
+  const statusCounts={};
+  fv.forEach(v=>{const k=v.status||'Indefinido';statusCounts[k]=(statusCounts[k]||0)+1;});
+  const stLabels=Object.keys(statusCounts).filter(k=>statusCounts[k]>0);
+  const stData=stLabels.map(k=>statusCounts[k]);
+  document.getElementById('leg-status').innerHTML=stLabels.map((l,i)=>`<span><i style="background:${stColors[i%stColors.length]}"></i>${l} (${stData[i]})</span>`).join('');
+  document.getElementById('leg-sit').innerHTML=sitLabels.map((l,i)=>`<span><i style="background:${sitColors[i%sitColors.length]}"></i>${l} (${sitData[i]})</span>`).join('');
+  if(chartStatus) chartStatus.destroy();
+  if(chartSit) chartSit.destroy();
+  chartStatus=new Chart(document.getElementById('chartStatus'),{type:'doughnut',data:{labels:stLabels,datasets:[{data:stData,backgroundColor:stColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  chartSit=new Chart(document.getElementById('chartSit'),{type:'doughnut',data:{labels:sitLabels,datasets:[{data:sitData,backgroundColor:sitColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+}
+
+function renderRanking(fv){
+  const byProd={};
+  fv.filter(v=>v.valor>0&&v.produto).forEach(v=>{
+    if(!byProd[v.produto]) byProd[v.produto]={total:0,qtd:0};
+    byProd[v.produto].total+=v.valor;
+    byProd[v.produto].qtd++;
+  });
+  const sorted=Object.entries(byProd).sort((a,b)=>sortMode==='receita'?b[1].total-a[1].total:b[1].qtd-a[1].qtd);
+  const maxVal=sorted.length?(sortMode==='receita'?sorted[0][1].total:sorted[0][1].qtd):1;
+  document.getElementById('ranking').innerHTML=sorted.length?sorted.map(([nome,d],i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:0.5px solid rgba(0,0,0,0.06)">
+      <span style="font-size:11px;color:#9b9b97;min-width:16px">${i+1}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nome}</div>
+        <div style="margin-top:4px"><span class="rank-bar" style="width:${Math.round(((sortMode==='receita'?d.total:d.qtd)/maxVal)*140)}px"></span><span style="font-size:11px;color:#6b6b68">${d.qtd} venda${d.qtd>1?'s':''}</span></div>
+      </div>
+      <span style="font-size:13px;font-weight:500;color:#1a1a1a;white-space:nowrap">R$ ${d.total.toFixed(2).replace('.',',')}</span>
+    </div>
+  `).join(''):'<div style="font-size:12px;color:#6b6b68;padding:12px 0">Nenhum produto encontrado.</div>';
+}
+
+function renderTabela(fv){
+  document.getElementById('tbody').innerHTML=fv.map(v=>{
+    const stKey=(v.status||'').toLowerCase();
+    const sitKey=(v.sit||'').toLowerCase();
+    return `<tr>
+      <td style="font-size:11px;color:#6b6b68">${v.data}</td>
+      <td style="font-size:11px">${v.produto}</td>
+      <td style="font-size:11px">${v.cliente}</td>
+      <td class="r" style="font-weight:500">${v.valor>0?'R$ '+v.valor.toFixed(2).replace('.',','):'—'}</td>
+      <td><span class="chip ${chipMap[stKey]||'chip-pend'}">${v.status||'—'}</span></td>
+      <td><span class="chip ${sitChipMap[sitKey]||'chip-pend'}">${v.sit||'—'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function render(){
+  const fv=filteredVendas();
+  renderMetrics(fv);
+  renderCharts(fv);
+  renderRanking(fv);
+  renderTabela(fv);
+}
+
+document.getElementById('selMes').addEventListener('change',e=>{mesFiltro=e.target.value;render();});
+document.getElementById('sortBtns').addEventListener('click',e=>{
+  const btn=e.target.closest('.fbtn');
+  if(!btn) return;
+  sortMode=btn.dataset.sort;
+  document.querySelectorAll('#sortBtns .fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRanking(filteredVendas());
+});
+document.getElementById('refreshBtn').addEventListener('click',fetchData);
+fetchData();
+</script>
+</body>
+</html>
