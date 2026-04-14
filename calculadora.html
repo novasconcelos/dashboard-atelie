@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ateliê — Painel</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f5f4f0;color:#1a1a1a;min-height:100vh}
+nav{background:#fff;border-bottom:0.5px solid rgba(0,0,0,0.1);padding:0 1.5rem;display:flex;align-items:center;position:sticky;top:0;z-index:10}
+.nav-brand{font-size:14px;font-weight:500;color:#1a1a1a;padding:1rem 1rem 1rem 0;margin-right:1rem;border-right:0.5px solid rgba(0,0,0,0.08)}
+.nav-tab{font-size:13px;color:#6b6b68;padding:1rem 1.2rem;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none}
+.nav-tab:hover{color:#1a1a1a}
+.nav-tab.active{color:#1a1a1a;border-bottom-color:#1D9E75;font-weight:500}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.refresh-btn{font-size:11px;padding:5px 12px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.18);background:transparent;color:#6b6b68;cursor:pointer}
+.refresh-btn:hover{background:#f5f4f0}
+.last-update{font-size:11px;color:#9b9b97}
+.page{display:none;padding:1.5rem 1rem;max-width:1100px;margin:0 auto}
+.page.active{display:block}
+.card{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.5rem}
+.metric{background:#eceae4;border-radius:8px;padding:12px 14px}
+.metric .ml{font-size:11px;color:#6b6b68;margin-bottom:4px}
+.metric .mv{font-size:20px;font-weight:500;color:#1a1a1a}
+.metric .ms{font-size:11px;color:#9b9b97;margin-top:2px}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1.5rem}
+.chart-box{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:1rem 1.25rem}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;font-size:12px;color:#6b6b68}
+.legend span{display:flex;align-items:center;gap:4px;cursor:pointer;padding:2px 4px;border-radius:4px;transition:background .12s}
+.legend span:hover{background:#f0efeb}
+.legend span.dimmed{opacity:0.4}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block;flex-shrink:0}
+.filters-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fbtn{font-size:11px;padding:4px 10px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.18);background:transparent;color:#6b6b68;cursor:pointer;transition:all .15s}
+.fbtn.active{background:#eceae4;color:#1a1a1a;font-weight:500}
+select{font-size:12px;padding:4px 8px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.18);background:#fff;color:#1a1a1a;cursor:pointer}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-size:11px;font-weight:500;color:#6b6b68;text-align:left;padding:6px 8px;border-bottom:0.5px solid rgba(0,0,0,0.08);white-space:nowrap}
+th.r,td.r{text-align:right}
+td{padding:7px 8px;border-bottom:0.5px solid rgba(0,0,0,0.06);color:#1a1a1a;vertical-align:middle}
+tr:hover td{background:#f9f9f7}
+.chip{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
+.chip-pago{background:#E1F5EE;color:#085041}
+.chip-pend{background:#FAEEDA;color:#633806}
+.chip-cortesia{background:#EEEDFE;color:#3C3489}
+.chip-ok{background:#E1F5EE;color:#085041}
+.chip-mid{background:#FAEEDA;color:#633806}
+.chip-bad{background:#FCEBEB;color:#791F1F}
+.rank-bar{height:6px;border-radius:3px;background:#1D9E75;display:inline-block;vertical-align:middle;margin-right:6px}
+.loading{font-size:13px;color:#6b6b68;padding:2rem 0;text-align:center}
+.error-box{font-size:13px;color:#791F1F;padding:1rem;background:#FCEBEB;border-radius:8px;margin-bottom:1rem}
+details{font-size:11px;margin-top:6px;cursor:pointer}
+.prow{display:flex;align-items:center;gap:12px;margin-bottom:.9rem}
+.prow label{font-size:13px;color:#6b6b68;min-width:200px}
+input[type=range]{flex:1;height:4px;accent-color:#1D9E75;cursor:pointer}
+.val-out{font-size:13px;font-weight:500;min-width:80px;color:#1a1a1a}
+.pmetric{background:#f5f4f0;border-radius:8px;padding:12px 14px}
+.pmetric .mlabel{font-size:11px;color:#6b6b68;margin-bottom:4px}
+.pmetric .mval{font-size:20px;font-weight:500;color:#1a1a1a}
+.pmetric .msub{font-size:11px;color:#9b9b97;margin-top:2px}
+input[type=number]{width:62px;padding:3px 5px;font-size:11px;border:0.5px solid rgba(0,0,0,0.18);border-radius:6px;background:#fff;color:#1a1a1a}
+.badge-new{background:#E6F1FB;color:#0C447C;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;margin-left:6px}
+.hint{font-size:11px;color:#9b9b97;margin-bottom:10px}
+@media(max-width:600px){.charts-row{grid-template-columns:1fr}.prow label{min-width:120px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-brand">Ateliê</span>
+  <button class="nav-tab active" data-page="vendas">Vendas</button>
+  <button class="nav-tab" data-page="precificacao">Precificação</button>
+  <div class="nav-right">
+    <span class="last-update" id="lastUpdate"></span>
+    <button class="refresh-btn" id="refreshBtn">Atualizar</button>
+  </div>
+</nav>
+
+<!-- VENDAS -->
+<div class="page active" id="page-vendas">
+  <div id="errorBox" style="display:none"></div>
+  <div id="loadingBox" class="loading">Buscando dados da planilha...</div>
+  <div id="vendas-content" style="display:none">
+    <div class="metric-grid" id="metrics"></div>
+    <div class="charts-row">
+      <div class="chart-box">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:500">Vendas por status</span>
+          <span style="font-size:11px;color:#9b9b97">clique para filtrar</span>
+        </div>
+        <div class="legend" id="leg-status"></div>
+        <div style="position:relative;height:160px"><canvas id="chartStatus" role="img" aria-label="Status de pagamento">Distribuição por status.</canvas></div>
+      </div>
+      <div class="chart-box">
+        <div style="font-size:13px;font-weight:500;margin-bottom:8px">Situação dos pedidos</div>
+        <div class="legend" id="leg-sit"></div>
+        <div style="position:relative;height:160px"><canvas id="chartSit" role="img" aria-label="Situação dos pedidos">Distribuição por situação.</canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:500">Produtos vendidos</div>
+        <div class="filters-row">
+          <select id="selMes"><option value="todos">Todos os meses</option></select>
+          <div id="sortBtns" style="display:flex;gap:4px">
+            <button class="fbtn active" data-sort="receita">Por receita</button>
+            <button class="fbtn" data-sort="qtd">Por quantidade</button>
+          </div>
+        </div>
+      </div>
+      <div id="statusFilterRow" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center;font-size:11px;color:#6b6b68">
+        Filtrar por status:
+      </div>
+      <div id="ranking"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;margin-bottom:10px">Todas as vendas</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Data</th><th>Cód.</th><th>Produto</th><th>Cliente</th><th class="r">Valor</th><th>Status</th><th>Situação</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRECIFICAÇÃO -->
+<div class="page" id="page-precificacao">
+  <div id="p-loadingBox" class="loading" style="display:none">Buscando dados de precificação...</div>
+  <div id="p-errorBox" class="error-box" style="display:none"></div>
+  <div id="p-content">
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;margin-bottom:1rem">Parâmetros base</div>
+      <div class="prow"><label>Meta mensal (R$)</label><input type="range" id="meta" min="1500" max="2500" step="50" value="2000"><span class="val-out" id="meta-out">R$ 2.000</span></div>
+      <div class="prow"><label>Horas trabalhadas por dia</label><input type="range" id="horas" min="4" max="6" step="0.5" value="5"><span class="val-out" id="horas-out">5h</span></div>
+      <div class="prow" style="margin-bottom:1.2rem"><label>Dias úteis por mês</label><input type="range" id="dias" min="18" max="26" step="1" value="22"><span class="val-out" id="dias-out">22 dias</span></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px" id="pmetrics"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;margin-bottom:6px">
+        Precificação por produto com mão de obra real
+        <span class="badge-new">preço sugerido</span>
+      </div>
+      <p class="hint">Tempo de produção editável direto na tabela. Dados carregados da planilha.</p>
+      <div class="tbl-wrap">
+        <table style="table-layout:fixed">
+          <thead>
+            <tr>
+              <th style="width:5%">Cód.</th>
+              <th style="width:22%">Produto</th>
+              <th style="width:8%" class="r">Categoria</th>
+              <th style="width:9%" class="r">Custo mat.</th>
+              <th style="width:9%" class="r">Tempo (min)</th>
+              <th style="width:9%" class="r">MO real</th>
+              <th style="width:9%" class="r">Custo total</th>
+              <th style="width:9%" class="r">Preço atual</th>
+              <th style="width:10%" class="r">Preço sugerido</th>
+              <th style="width:8%" class="r">Margem</th>
+              <th style="width:5%" class="r">Status</th>
+            </tr>
+          </thead>
+          <tbody id="ptbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+/* ── NAV ── */
+document.querySelectorAll('.nav-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('page-'+tab.dataset.page).classList.add('active');
+  });
+});
+
+/* ── SHARED UTILS ── */
+const PROXIES=[
+  u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
+  u=>'https://corsproxy.io/?'+encodeURIComponent(u),
+  u=>'https://thingproxy.freeboard.io/fetch/'+u,
+];
+async function tryFetch(url){
+  for(const proxy of PROXIES){
+    try{const r=await fetch(proxy(url));if(r.ok){const t=await r.text();if(t&&t.length>50)return t;}}catch(e){continue;}
+  }
+  throw new Error('Todos os proxies falharam. Verifique sua conexão.');
+}
+function norm(s){return(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();}
+function parseCSVLine(line){
+  const r=[];let cur='',inQ=false;
+  for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){inQ=!inQ;continue;}if(c===','&&!inQ){r.push(cur.trim());cur='';continue;}cur+=c;}
+  r.push(cur.trim());return r;
+}
+function parseCSV(text,detectHeader){
+  text=text.replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  const lines=text.trim().split('\n').filter(l=>l.trim());
+  const hIdx=lines.findIndex(detectHeader);
+  if(hIdx===-1)return[];
+  const headers=parseCSVLine(lines[hIdx]).map(h=>norm(h.replace(/['"]/g,'')));
+  const rows=[];
+  for(let i=hIdx+1;i<lines.length;i++){
+    const cols=parseCSVLine(lines[i]);
+    if(cols.every(c=>!c))continue;
+    const obj={};headers.forEach((h,idx)=>{obj[h]=(cols[idx]||'').replace(/^"|"$/g,'').trim();});
+    rows.push(obj);
+  }
+  return rows;
+}
+function get(obj,keys){for(const k of keys){const n=norm(k);if(obj[n]!==undefined)return obj[n];}return'';}
+function parseValor(v){if(!v)return 0;return parseFloat(v.replace(/R\$|\s/g,'').replace(/\./g,'').replace(',','.'))||0;}
+
+/* ── VENDAS ── */
+const VENDAS_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vStwozPUCnYfE3O-EJVpTrQtgdsttloV1O57Bw_WPLArse5TIUDozd48vz5rTid-Eartf3D92EczYhR/pub?gid=2115485472&single=true&output=csv';
+let allVendas=[],sortMode='receita',mesFiltro='todos',statusFiltro='todos';
+let chartStatus=null,chartSit=null;
+const stColors=['#1D9E75','#7F77DD','#EF9F27','#D85A30','#D4537E','#378ADD'];
+const sitColors=['#1D9E75','#EF9F27','#7F77DD','#D85A30'];
+const chipMap={pago:'chip-pago',cortesia:'chip-cortesia',pendente:'chip-pend'};
+const sitChipMap={entregue:'chip-pago','ela retirar':'chip-pend',cortesia:'chip-cortesia'};
+
+function getMes(d){if(!d)return'';const p=d.split('/');if(p.length<2)return'';const m=parseInt(p[1]);return{1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'}[m]||'';}
+function normStatus(s){const l=norm(s);if(l.includes('pago'))return'Pago';if(l.includes('cortesia'))return'Cortesia';if(l.includes('pendente'))return'Pendente';return s.trim();}
+function normSit(s){const l=norm(s);if(l.includes('entregue'))return'Entregue';if(l.includes('retirar'))return'Ela retirar';if(l.includes('cortesia'))return'Cortesia';return s.trim();}
+
+async function fetchVendas(){
+  document.getElementById('loadingBox').style.display='block';
+  document.getElementById('vendas-content').style.display='none';
+  document.getElementById('errorBox').style.display='none';
+  document.getElementById('lastUpdate').textContent='';
+  try{
+    const text=await tryFetch(VENDAS_URL);
+    const rows=parseCSV(text,l=>{const n=norm(l);return n.includes('data')&&(n.includes('produto')||n.includes('valor'));});
+    allVendas=rows.map(r=>({
+      data:get(r,['data']),mes:getMes(get(r,['data'])),
+      cod:get(r,['cod_produto','cod produto','codigo']),
+      produto:get(r,['produtos','produto']),
+      valor:parseValor(get(r,['valor'])),
+      status:normStatus(get(r,['status'])),
+      sit:normSit(get(r,['situacao','situaao','situação'])),
+      cliente:get(r,['clientes','cliente']),
+    })).filter(r=>r.data||r.produto||r.cliente);
+    populateMeses();populateStatusFilter();renderVendas();
+    document.getElementById('loadingBox').style.display='none';
+    document.getElementById('vendas-content').style.display='block';
+    const now=new Date();
+    document.getElementById('lastUpdate').textContent='Atualizado às '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+' · '+allVendas.length+' registros';
+  }catch(e){
+    document.getElementById('loadingBox').style.display='none';
+    const eb=document.getElementById('errorBox');eb.style.display='block';eb.className='error-box';
+    eb.innerHTML='<strong>Não foi possível carregar os dados.</strong><br>'+e.message+'<details><summary>O que fazer?</summary>Verifique se o link CSV está publicado: Arquivo → Publicar na web → CSV.</details>';
+    document.getElementById('lastUpdate').textContent='Falha ao carregar';
+  }
+}
+
+function populateMeses(){
+  const meses=[...new Set(allVendas.map(v=>v.mes).filter(Boolean))];
+  const sel=document.getElementById('selMes');
+  sel.innerHTML='<option value="todos">Todos os meses</option>';
+  meses.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;sel.appendChild(o);});
+}
+
+function populateStatusFilter(){
+  const statuses=[...new Set(allVendas.map(v=>v.status).filter(Boolean))];
+  const row=document.getElementById('statusFilterRow');
+  row.innerHTML='<span style="align-self:center;margin-right:4px">Filtrar por status:</span>';
+  const all=document.createElement('button');
+  all.className='fbtn active';all.textContent='Todos';all.dataset.st='todos';
+  row.appendChild(all);
+  statuses.forEach(s=>{const b=document.createElement('button');b.className='fbtn';b.textContent=s;b.dataset.st=s;row.appendChild(b);});
+  row.addEventListener('click',e=>{
+    const btn=e.target.closest('.fbtn');if(!btn)return;
+    statusFiltro=btn.dataset.st;
+    row.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');renderVendas();
+  });
+}
+
+function filteredVendas(){
+  let fv=mesFiltro==='todos'?allVendas:allVendas.filter(v=>v.mes===mesFiltro);
+  if(statusFiltro!=='todos')fv=fv.filter(v=>v.status===statusFiltro);
+  return fv;
+}
+
+function renderMetrics(fv){
+  const pagas=fv.filter(v=>v.status==='Pago');
+  const total=pagas.reduce((a,v)=>a+v.valor,0);
+  const ticket=pagas.length?total/pagas.length:0;
+  const cortesias=fv.filter(v=>v.status==='Cortesia').length;
+  document.getElementById('metrics').innerHTML=`
+    <div class="metric"><div class="ml">Receita total</div><div class="mv">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="ms">vendas pagas</div></div>
+    <div class="metric"><div class="ml">Pedidos</div><div class="mv">${fv.length}</div><div class="ms">${cortesias} cortesia(s)</div></div>
+    <div class="metric"><div class="ml">Ticket médio</div><div class="mv">R$ ${ticket.toFixed(2).replace('.',',')}</div><div class="ms">pedidos pagos</div></div>
+    <div class="metric"><div class="ml">Clientes únicos</div><div class="mv">${new Set(fv.map(v=>v.cliente).filter(Boolean)).size}</div><div class="ms">neste período</div></div>`;
+}
+
+function renderCharts(fv){
+  const sitC={},stC={};
+  allVendas.forEach(v=>{
+    const sk=v.sit||'Indefinido';sitC[sk]=(sitC[sk]||0)+1;
+    const stk=v.status||'Indefinido';stC[stk]=(stC[stk]||0)+1;
+  });
+  const sL=Object.keys(sitC),sD=Object.values(sitC);
+  const stL=Object.keys(stC).filter(k=>stC[k]>0),stD=stL.map(k=>stC[k]);
+  const legStatus=document.getElementById('leg-status');
+  legStatus.innerHTML=stL.map((l,i)=>`<span data-st="${l}" class="${statusFiltro!=='todos'&&statusFiltro!==l?'dimmed':''}"><i style="background:${stColors[i%stColors.length]}"></i>${l} (${stD[i]})</span>`).join('');
+  legStatus.querySelectorAll('span').forEach(sp=>{
+    sp.addEventListener('click',()=>{
+      statusFiltro=statusFiltro===sp.dataset.st?'todos':sp.dataset.st;
+      document.querySelectorAll('#statusFilterRow .fbtn').forEach(b=>b.classList.toggle('active',b.dataset.st===statusFiltro||(statusFiltro==='todos'&&b.dataset.st==='todos')));
+      renderVendas();
+    });
+  });
+  document.getElementById('leg-sit').innerHTML=sL.map((l,i)=>`<span><i style="background:${sitColors[i%sitColors.length]}"></i>${l} (${sD[i]})</span>`).join('');
+  if(chartStatus)chartStatus.destroy();
+  if(chartSit)chartSit.destroy();
+  const stBg=stL.map((l,i)=>statusFiltro==='todos'||statusFiltro===l?stColors[i%stColors.length]:stColors[i%stColors.length]+'44');
+  chartStatus=new Chart(document.getElementById('chartStatus'),{type:'doughnut',data:{labels:stL,datasets:[{data:stD,backgroundColor:stBg,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},onClick:(_,els)=>{if(els.length){const l=stL[els[0].index];statusFiltro=statusFiltro===l?'todos':l;document.querySelectorAll('#statusFilterRow .fbtn').forEach(b=>b.classList.toggle('active',b.dataset.st===statusFiltro||(statusFiltro==='todos'&&b.dataset.st==='todos')));renderVendas();}}}});
+  chartSit=new Chart(document.getElementById('chartSit'),{type:'doughnut',data:{labels:sL,datasets:[{data:sD,backgroundColor:sitColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+}
+
+function renderRanking(fv){
+  const byC={};
+  fv.filter(v=>v.valor>0&&v.produto).forEach(v=>{
+    const key=v.cod||v.produto;
+    if(!byC[key])byC[key]={cod:v.cod,nome:v.produto,total:0,qtd:0};
+    byC[key].total+=v.valor;byC[key].qtd++;
+  });
+  const sorted=Object.values(byC).sort((a,b)=>sortMode==='receita'?b.total-a.total:b.qtd-a.qtd);
+  const maxV=sorted.length?(sortMode==='receita'?sorted[0].total:sorted[0].qtd):1;
+  document.getElementById('ranking').innerHTML=sorted.length?sorted.map((d,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:0.5px solid rgba(0,0,0,0.06)">
+      <span style="font-size:11px;color:#9b9b97;min-width:16px">${i+1}</span>
+      <span style="font-size:10px;color:#9b9b97;background:#f0efeb;padding:1px 5px;border-radius:4px;white-space:nowrap">#${d.cod||'—'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.nome}</div>
+        <div style="margin-top:4px"><span class="rank-bar" style="width:${Math.round(((sortMode==='receita'?d.total:d.qtd)/maxV)*140)}px"></span><span style="font-size:11px;color:#6b6b68">${d.qtd} venda${d.qtd>1?'s':''}</span></div>
+      </div>
+      <span style="font-size:13px;font-weight:500;color:#1a1a1a;white-space:nowrap">R$ ${d.total.toFixed(2).replace('.',',')}</span>
+    </div>`).join(''):'<div style="font-size:12px;color:#6b6b68;padding:12px 0">Nenhum produto encontrado.</div>';
+}
+
+function renderTabela(fv){
+  document.getElementById('tbody').innerHTML=fv.map(v=>{
+    const stK=norm(v.status),sitK=norm(v.sit);
+    return`<tr>
+      <td style="font-size:11px;color:#6b6b68">${v.data}</td>
+      <td style="font-size:11px;color:#9b9b97">${v.cod||'—'}</td>
+      <td style="font-size:11px">${v.produto}</td>
+      <td style="font-size:11px">${v.cliente}</td>
+      <td class="r" style="font-weight:500">${v.valor>0?'R$ '+v.valor.toFixed(2).replace('.',','):'—'}</td>
+      <td><span class="chip ${chipMap[stK]||'chip-pend'}">${v.status||'—'}</span></td>
+      <td><span class="chip ${sitChipMap[sitK]||'chip-pend'}">${v.sit||'—'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderVendas(){
+  const fv=filteredVendas();
+  renderMetrics(fv);renderCharts(fv);renderRanking(fv);renderTabela(fv);
+}
+
+document.getElementById('selMes').addEventListener('change',e=>{mesFiltro=e.target.value;renderVendas();});
+document.getElementById('sortBtns').addEventListener('click',e=>{
+  const btn=e.target.closest('.fbtn');if(!btn)return;
+  sortMode=btn.dataset.sort;
+  document.querySelectorAll('#sortBtns .fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');renderRanking(filteredVendas());
+});
+document.getElementById('refreshBtn').addEventListener('click',()=>{fetchVendas();fetchPrecificacao();});
+
+/* ── PRECIFICAÇÃO ── */
+const PREC_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vStwozPUCnYfE3O-EJVpTrQtgdsttloV1O57Bw_WPLArse5TIUDozd48vz5rTid-Eartf3D92EczYhR/pub?output=csv';
+let produtos=[];
+const tempos={};
+
+async function fetchPrecificacao(){
+  document.getElementById('p-loadingBox').style.display='block';
+  document.getElementById('p-errorBox').style.display='none';
+  try{
+    const text=await tryFetch(PREC_URL);
+    const rows=parseCSV(text,l=>{const n=norm(l);return(n.includes('codigo')||n.includes('produto'))&&n.includes('preco');});
+    if(!rows.length) throw new Error('Não foi possível encontrar os dados de precificação. Verifique os cabeçalhos da aba.');
+    produtos=rows.map(r=>({
+      cod: get(r,['codigo','cod','cod_produto','code']),
+      nome: get(r,['produto','produtos','nome']),
+      categoria: get(r,['categoria']),
+      custo: parseValor(get(r,['custo unitario','custo_unitario','custo unitário','custo'])),
+      precoAtual: parseValor(get(r,['preco venda','preco_venda','preço venda','preço de venda','preco'])),
+      tempoMin: parseInt(get(r,['tempo','tempo min','tempo (min)']))||60,
+    })).filter(r=>r.nome);
+    produtos.forEach(p=>{ if(!tempos[p.cod]) tempos[p.cod]=p.tempoMin; });
+    document.getElementById('p-loadingBox').style.display='none';
+    updateP();
+  }catch(e){
+    document.getElementById('p-loadingBox').style.display='none';
+    const eb=document.getElementById('p-errorBox');
+    eb.style.display='block';
+    eb.innerHTML='<strong>Não foi possível carregar a precificação.</strong><br>'+e.message+'<details><summary>O que fazer?</summary>Verifique se a aba de precificação está publicada no Google Sheets e se os cabeçalhos incluem: Codigo, Produto, Categoria, Custo Unitário, Preço Venda.</details>';
+  }
+}
+
+const R=v=>'R$ '+v.toFixed(2).replace('.',',');
+const Pct=v=>v.toFixed(1).replace('.',',')+' %';
+
+function getParams(){
+  const meta=+document.getElementById('meta').value;
+  const horas=+document.getElementById('horas').value;
+  const dias=+document.getElementById('dias').value;
+  const totalHoras=horas*dias;
+  return{meta,horas,dias,totalHoras,valorHora:meta/totalHoras};
+}
+
+function renderPMetrics(p){
+  document.getElementById('pmetrics').innerHTML=`
+    <div class="pmetric"><div class="mlabel">Meta mensal</div><div class="mval">${R(p.meta)}</div></div>
+    <div class="pmetric"><div class="mlabel">Horas/mês</div><div class="mval">${p.totalHoras.toFixed(0)}h</div><div class="msub">${p.horas}h × ${p.dias} dias</div></div>
+    <div class="pmetric"><div class="mlabel">Valor da hora</div><div class="mval">${R(p.valorHora)}</div><div class="msub">por hora trabalhada</div></div>
+    <div class="pmetric"><div class="mlabel">Margem alvo</div><div class="mval">60%+</div><div class="msub">considerando MO real</div></div>`;
+}
+
+function chipMargem(m){
+  if(m>=60)return'<span class="chip chip-ok">Ótimo</span>';
+  if(m>=45)return'<span class="chip chip-mid">OK</span>';
+  return'<span class="chip chip-bad">Baixo</span>';
+}
+
+function renderPTable(p){
+  if(!produtos.length){
+    document.getElementById('ptbody').innerHTML='<tr><td colspan="11" style="text-align:center;color:#9b9b97;padding:1rem">Carregando dados da planilha...</td></tr>';
+    return;
+  }
+  document.getElementById('ptbody').innerHTML=produtos.map(prod=>{
+    const min=tempos[prod.cod]||prod.tempoMin||60;
+    const moReal=(min/60)*p.valorHora;
+    const custoTotal=prod.custo+moReal;
+    const sugerido=custoTotal/(1-0.60);
+    const margem=prod.precoAtual>0?((prod.precoAtual-custoTotal)/prod.precoAtual)*100:0;
+    const acima=sugerido>prod.precoAtual;
+    return`<tr>
+      <td style="font-size:11px;color:#9b9b97">${prod.cod}</td>
+      <td style="font-size:11px">${prod.nome}</td>
+      <td style="font-size:10px;color:#6b6b68;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px">${prod.categoria}</td>
+      <td class="r">${R(prod.custo)}</td>
+      <td class="r"><input type="number" min="5" max="480" step="5" value="${min}" style="width:58px;font-size:11px;padding:2px 4px" data-cod="${prod.cod}"></td>
+      <td class="r">${R(moReal)}</td>
+      <td class="r">${R(custoTotal)}</td>
+      <td class="r">${R(prod.precoAtual)}</td>
+      <td class="r" style="font-weight:500;color:${acima?'#993C1D':'#0F6E56'}">${R(Math.ceil(sugerido/5)*5)}</td>
+      <td class="r">${Pct(margem)}</td>
+      <td class="r">${chipMargem(margem)}</td>
+    </tr>`;
+  }).join('');
+  document.querySelectorAll('input[data-cod]').forEach(inp=>{
+    inp.addEventListener('change',e=>{
+      tempos[e.target.dataset.cod]=Math.max(5,+e.target.value||30);
+      renderPTable(getParams());
+    });
+  });
+}
+
+function updateP(){
+  const p=getParams();
+  document.getElementById('meta-out').textContent='R$ '+p.meta.toLocaleString('pt-BR');
+  document.getElementById('horas-out').textContent=p.horas+'h';
+  document.getElementById('dias-out').textContent=p.dias+' dias';
+  renderPMetrics(p);renderPTable(p);
+}
+['meta','horas','dias'].forEach(id=>document.getElementById(id).addEventListener('input',updateP));
+
+/* ── INIT ── */
+fetchVendas();
+fetchPrecificacao();
+</script>
+</body>
+</html>
