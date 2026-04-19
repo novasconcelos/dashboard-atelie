@@ -7,7 +7,7 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f4f0; color: #1a1a1a; min-height: 100vh; padding: 2rem 1rem; }
-  .container { max-width: 1100px; margin: 0 auto; }
+  .container { max-width: 1200px; margin: 0 auto; }
   .top-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; }
   .top-bar h1 { font-size: 20px; font-weight: 500; }
   .last-update { font-size: 11px; color: #9b9b97; margin-top: 2px; }
@@ -32,10 +32,14 @@
   th.r, td.r { text-align: right; }
   td { padding: 7px 8px; border-bottom: 0.5px solid rgba(0,0,0,0.06); color: #1a1a1a; vertical-align: middle; }
   tr:hover td { background: #f9f9f7; }
+  tr.alert-row td { background: #fff8f0; }
+  tr.alert-row:hover td { background: #fff0e0; }
+  tr.alert-row td:first-child { border-left: 3px solid #D85A30; padding-left: 5px; }
   .chip { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 500; }
   .ok { background: #E1F5EE; color: #085041; }
   .mid { background: #FAEEDA; color: #633806; }
   .bad { background: #FCEBEB; color: #791F1F; }
+  .warn-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 500; background: #FCEBEB; color: #791F1F; margin-left: 4px; }
   input[type=number] { width: 62px; padding: 3px 5px; font-size: 11px; border: 0.5px solid rgba(0,0,0,0.18); border-radius: 6px; background: #fff; color: #1a1a1a; }
   .loading { font-size: 13px; color: #6b6b68; padding: 2rem 0; text-align: center; }
   .error-box { font-size: 13px; color: #791F1F; padding: 1rem; background: #FCEBEB; border-radius: 8px; margin-bottom: 1rem; }
@@ -43,14 +47,15 @@
   .fbtn { font-size: 11px; padding: 4px 10px; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.18); background: transparent; color: #6b6b68; cursor: pointer; transition: all .15s; }
   .fbtn.active { background: #eceae4; color: #1a1a1a; font-weight: 500; }
   details { font-size: 11px; margin-top: 6px; cursor: pointer; color: #791F1F; }
-  .cat-times-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
-  .cat-time-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #f5f4f0; border-radius: 8px; padding: 8px 12px; }
-  .cat-time-label { font-size: 12px; color: #1a1a1a; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .cat-time-input { width: 60px; padding: 3px 6px; font-size: 12px; border: 0.5px solid rgba(0,0,0,0.18); border-radius: 6px; background: #fff; color: #1a1a1a; text-align: right; }
-  .cat-time-unit { font-size: 11px; color: #9b9b97; }
-  .apply-btn { font-size: 11px; padding: 5px 14px; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.2); background: #1D9E75; color: #fff; cursor: pointer; font-weight: 500; }
-  .apply-btn:hover { background: #0F6E56; }
   .divider { border: none; border-top: 0.5px solid rgba(0,0,0,0.08); margin: 1rem 0; }
+  .legend-box { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #6b6b68; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .alert-summary { background: #fff8f0; border: 0.5px solid #F0997B; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 12px; color: #712B13; display: none; }
+  .alert-summary strong { font-weight: 500; }
+  .margin-rule { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #6b6b68; padding: 6px 0; border-bottom: 0.5px solid rgba(0,0,0,0.05); }
+  .margin-rule:last-child { border-bottom: none; }
+  .margin-rule .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -89,11 +94,14 @@
     </div>
 
     <div class="card">
-      <div class="section-title">Tempo padrão por categoria</div>
-      <p class="hint" style="margin-bottom:12px">Defina o tempo médio de produção para cada categoria e aplique em todos os produtos de uma vez.</p>
-      <div class="cat-times-grid" id="catTimesGrid"></div>
-      <div class="divider"></div>
-      <button class="apply-btn" id="applyBtn">Aplicar tempos por categoria</button>
+      <div class="section-title">Regras de margem mínima por tempo</div>
+      <p class="hint" style="margin-bottom:12px">O preço sugerido é calculado com base no tempo de produção de cada produto — quanto mais tempo, maior a margem exigida.</p>
+      <div>
+        <div class="margin-rule"><div class="dot" style="background:#1D9E75"></div><strong style="min-width:90px">Até 30 min</strong><span>margem mínima: <strong>50%</strong></span></div>
+        <div class="margin-rule"><div class="dot" style="background:#639922"></div><strong style="min-width:90px">31 – 60 min</strong><span>margem mínima: <strong>55%</strong></span></div>
+        <div class="margin-rule"><div class="dot" style="background:#EF9F27"></div><strong style="min-width:90px">61 – 120 min</strong><span>margem mínima: <strong>62%</strong></span></div>
+        <div class="margin-rule"><div class="dot" style="background:#D85A30"></div><strong style="min-width:90px">Mais de 120 min</strong><span>margem mínima: <strong>68%</strong></span></div>
+      </div>
     </div>
 
     <div class="card">
@@ -103,21 +111,32 @@
           <span class="badge">preço sugerido</span>
         </div>
       </div>
-      <p class="hint">Produtos carregados da planilha. Ajuste o tempo individualmente se necessário.</p>
+      <p class="hint">Tempo carregado da coluna "Tempo(min)" da planilha. Editável individualmente.</p>
+
+      <div id="alertSummary" class="alert-summary"></div>
+
+      <div class="legend-box">
+        <div class="legend-item"><div class="legend-dot" style="background:#E1F5EE;border:0.5px solid #1D9E75"></div>Margem atingida</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#FAEEDA;border:0.5px solid #EF9F27"></div>Margem OK (≥45%)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#FCEBEB;border:0.5px solid #D85A30"></div>Abaixo da margem mínima</div>
+        <div class="legend-item" style="display:flex;align-items:center;gap:4px"><div style="width:3px;height:14px;background:#D85A30;border-radius:2px"></div>Linha de alerta</div>
+      </div>
+
       <div class="cat-filter" id="catFilter"></div>
       <div class="tbl-wrap">
         <table>
           <thead>
             <tr>
-              <th style="width:24%">Produto</th>
-              <th style="width:12%">Categoria</th>
-              <th class="r" style="width:8%">Custo mat.</th>
-              <th class="r" style="width:9%">Tempo (min)</th>
-              <th class="r" style="width:8%">MO real</th>
-              <th class="r" style="width:8%">Custo total</th>
-              <th class="r" style="width:9%">Preço atual</th>
-              <th class="r" style="width:10%">Preço sugerido</th>
-              <th class="r" style="width:7%">Margem</th>
+              <th style="width:22%">Produto</th>
+              <th style="width:11%">Categoria</th>
+              <th class="r" style="width:7%">Custo</th>
+              <th class="r" style="width:8%">Tempo (min)</th>
+              <th class="r" style="width:7%">MO real</th>
+              <th class="r" style="width:7%">Custo total</th>
+              <th class="r" style="width:8%">Preço atual</th>
+              <th class="r" style="width:9%">Margem atual</th>
+              <th class="r" style="width:7%">Mín. exigida</th>
+              <th class="r" style="width:9%">Preço sugerido</th>
               <th class="r" style="width:5%">Status</th>
             </tr>
           </thead>
@@ -137,8 +156,7 @@ const PROXIES = [
   u => 'https://thingproxy.freeboard.io/fetch/' + u,
 ];
 
-let produtos = [], tempos = {}, catFiltro = 'Todas';
-let categorias = [];
+let produtos = [], tempos = {}, catFiltro = 'Todas', categorias = [];
 
 function norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
 
@@ -181,14 +199,28 @@ function get(obj, keys){
 }
 
 async function tryFetch(url){
-  const bust=url+(url.includes('?')?'&':'?')+'_cb='+Date.now();
+  const bust = url + (url.includes('?')?'&':'?') + '_cb=' + Date.now();
   for(const proxy of PROXIES){
     try{
-      const r=await fetch(proxy(bust),{cache:'no-store'});
-      if(r.ok){const t=await r.text();if(t&&t.length>50)return t;}
-    }catch(e){continue;}
+      const r = await fetch(proxy(bust), {cache:'no-store'});
+      if(r.ok){ const t=await r.text(); if(t&&t.length>50) return t; }
+    } catch(e){ continue; }
   }
   throw new Error('Todos os proxies falharam. Verifique sua conexão.');
+}
+
+function margemMinima(minutos){
+  if(minutos <= 30) return 50;
+  if(minutos <= 60) return 55;
+  if(minutos <= 120) return 62;
+  return 68;
+}
+
+function margemCor(minutos){
+  if(minutos <= 30) return '#1D9E75';
+  if(minutos <= 60) return '#639922';
+  if(minutos <= 120) return '#EF9F27';
+  return '#D85A30';
 }
 
 async function fetchData(){
@@ -209,14 +241,14 @@ async function fetchData(){
         const mo = parseNum(get(r,['mao de obra','mo']));
         const cat = get(r,['categoria']) || 'Geral';
         const nome = get(r,['produto','produtos']);
-        tempos[cod] = mo > 0 ? Math.round((mo / 18) * 60) : 45;
+        const tempoColuna = parseInt(get(r,['tempo(min)','tempo (min)','tempo min','tempo'])) || 0;
+        tempos[cod] = tempoColuna > 0 ? tempoColuna : (mo > 0 ? Math.round((mo/18)*60) : 45);
         return { cod, nome, cat, custo, preco, mo };
       })
       .filter(p => p.nome && p.preco > 0);
 
     categorias = [...new Set(produtos.map(p=>p.cat).filter(Boolean))];
     buildCatFilter();
-    buildCatTimesGrid();
     renderAll();
     document.getElementById('loadingBox').style.display='none';
     document.getElementById('content').style.display='block';
@@ -232,39 +264,6 @@ async function fetchData(){
       '<details><summary>O que fazer?</summary>Verifique se a aba "Valores 2.0" está publicada como CSV no Google Sheets: Arquivo → Publicar na web.</details>';
     document.getElementById('lastUpdate').textContent='Falha ao carregar';
   }
-}
-
-function buildCatTimesGrid(){
-  const grid = document.getElementById('catTimesGrid');
-  const defaults = getCatDefaults();
-  grid.innerHTML = categorias.map(cat => {
-    const avg = defaults[cat] || 45;
-    return `<div class="cat-time-row">
-      <span class="cat-time-label" title="${cat}">${cat}</span>
-      <input type="number" class="cat-time-input" data-cat="${cat}" min="5" max="480" step="5" value="${avg}">
-      <span class="cat-time-unit">min</span>
-    </div>`;
-  }).join('');
-}
-
-function getCatDefaults(){
-  const defaults = {};
-  categorias.forEach(cat => {
-    const prods = produtos.filter(p=>p.cat===cat);
-    if(!prods.length){ defaults[cat]=45; return; }
-    const avg = prods.reduce((a,p)=>a+(tempos[p.cod]||45),0)/prods.length;
-    defaults[cat] = Math.round(avg/5)*5;
-  });
-  return defaults;
-}
-
-function applyCatTimes(){
-  document.querySelectorAll('.cat-time-input').forEach(inp=>{
-    const cat = inp.dataset.cat;
-    const val = Math.max(5, +inp.value||45);
-    produtos.filter(p=>p.cat===cat).forEach(p=>{ tempos[p.cod]=val; });
-  });
-  renderTabela(getParams());
 }
 
 function buildCatFilter(){
@@ -295,34 +294,62 @@ function renderMetrics(p){
     <div class="metric"><div class="ml">Meta mensal</div><div class="mv">R$ ${p.meta.toLocaleString('pt-BR')}</div></div>
     <div class="metric"><div class="ml">Horas/mês</div><div class="mv">${p.totalHoras.toFixed(0)}h</div><div class="ms">${p.horas}h × ${p.dias} dias</div></div>
     <div class="metric"><div class="ml">Valor da hora</div><div class="mv">R$ ${p.valorHora.toFixed(2).replace('.',',')}</div><div class="ms">por hora trabalhada</div></div>
-    <div class="metric"><div class="ml">Margem alvo</div><div class="mv">60%+</div><div class="ms">considerando MO real</div></div>`;
+    <div class="metric"><div class="ml">Margem alvo mín.</div><div class="mv">50–68%</div><div class="ms">varia por tempo de prod.</div></div>`;
 }
 
-function chipStatus(m){ return m>=60?'<span class="chip ok">Ótimo</span>':m>=45?'<span class="chip mid">OK</span>':'<span class="chip bad">Baixo</span>'; }
+function chipStatus(margem, minAlvo){
+  if(margem >= minAlvo) return `<span class="chip ok">Ótimo</span>`;
+  if(margem >= 45)      return `<span class="chip mid">OK</span>`;
+  return                       `<span class="chip bad">Baixo</span>`;
+}
 
 function renderTabela(p){
   const filtered = catFiltro==='Todas' ? produtos : produtos.filter(pr=>pr.cat===catFiltro);
-  document.getElementById('tbody').innerHTML = filtered.map(prod=>{
+  let alertCount = 0;
+
+  const rows = filtered.map(prod=>{
     const min = tempos[prod.cod] || 45;
     const moReal = (min/60)*p.valorHora;
     const custoTotal = prod.custo + moReal;
-    const precoSugerido = custoTotal / 0.40;
+    const minAlvo = margemMinima(min);
+    const cor = margemCor(min);
+    const precoSugerido = custoTotal / (1 - minAlvo/100);
     const margem = prod.preco > 0 ? ((prod.preco - custoTotal)/prod.preco)*100 : 0;
-    const diff = precoSugerido > prod.preco;
-    const catShort = prod.cat.length > 18 ? prod.cat.slice(0,16)+'…' : prod.cat;
-    return `<tr>
-      <td style="font-size:11px">${prod.nome}</td>
-      <td style="font-size:10px;color:#6b6b68" title="${prod.cat}">${catShort}</td>
+    const abaixo = margem < minAlvo;
+    if(abaixo) alertCount++;
+
+    const rowClass = abaixo ? 'alert-row' : '';
+    const precoSugFormatado = 'R$ ' + (Math.ceil(precoSugerido/5)*5).toFixed(2).replace('.',',');
+
+    return `<tr class="${rowClass}">
+      <td style="font-size:11px">${prod.nome}${abaixo?'<span class="warn-badge">&#9888; abaixo</span>':''}</td>
+      <td style="font-size:10px;color:#6b6b68;overflow:hidden;text-overflow:ellipsis" title="${prod.cat}">${prod.cat.length>16?prod.cat.slice(0,14)+'…':prod.cat}</td>
       <td class="r">R$ ${prod.custo.toFixed(2).replace('.',',')}</td>
-      <td class="r"><input type="number" min="5" max="480" step="5" value="${min}" data-cod="${prod.cod}" style="width:58px;font-size:11px;padding:2px 4px"></td>
+      <td class="r">
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px">
+          <div style="width:6px;height:6px;border-radius:50%;background:${cor};flex-shrink:0"></div>
+          <input type="number" min="5" max="480" step="5" value="${min}" data-cod="${prod.cod}" style="width:52px;font-size:11px;padding:2px 4px">
+        </div>
+      </td>
       <td class="r">R$ ${moReal.toFixed(2).replace('.',',')}</td>
       <td class="r">R$ ${custoTotal.toFixed(2).replace('.',',')}</td>
       <td class="r">R$ ${prod.preco.toFixed(2).replace('.',',')}</td>
-      <td class="r" style="font-weight:500;color:${diff?'#993C1D':'#0F6E56'}">R$ ${(Math.ceil(precoSugerido/5)*5).toFixed(2).replace('.',',')}</td>
-      <td class="r">${margem.toFixed(1).replace('.',',')}%</td>
-      <td class="r">${chipStatus(margem)}</td>
+      <td class="r" style="font-weight:500;color:${abaixo?'#A32D2D':'#1a1a1a'}">${margem.toFixed(1).replace('.',',')}%</td>
+      <td class="r" style="color:${cor};font-weight:500">${minAlvo}%</td>
+      <td class="r" style="font-weight:500;color:${abaixo?'#993C1D':'#0F6E56'}">${precoSugFormatado}</td>
+      <td class="r">${chipStatus(margem, minAlvo)}</td>
     </tr>`;
-  }).join('');
+  });
+
+  document.getElementById('tbody').innerHTML = rows.join('');
+
+  const summary = document.getElementById('alertSummary');
+  if(alertCount > 0){
+    summary.style.display='block';
+    summary.innerHTML = `<strong>&#9888; ${alertCount} produto${alertCount>1?'s':''} abaixo da margem mínima</strong> — veja os itens destacados em laranja. O preço sugerido mostra o valor mínimo para atingir a margem ideal por tempo de produção.`;
+  } else {
+    summary.style.display='none';
+  }
 
   document.querySelectorAll('input[data-cod]').forEach(inp=>{
     inp.addEventListener('change', e=>{
@@ -345,7 +372,6 @@ function renderAll(){
   document.getElementById(id).addEventListener('input', renderAll);
 });
 document.getElementById('refreshBtn').addEventListener('click', fetchData);
-document.getElementById('applyBtn').addEventListener('click', applyCatTimes);
 fetchData();
 </script>
 </body>
