@@ -103,6 +103,10 @@ input[type=number]{width:62px;padding:3px 5px;font-size:11px;border:0.5px solid 
         <div style="position:relative;height:160px"><canvas id="chartSit" role="img" aria-label="Situação dos pedidos">Distribuição por situação.</canvas></div>
       </div>
     </div>
+    <div class="card" id="horas-card">
+      <div style="font-size:13px;font-weight:500;margin-bottom:12px">Horas trabalhadas no período</div>
+      <div id="horas-content"></div>
+    </div>
     <div class="card">
       <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
         <div style="font-size:13px;font-weight:500">Produtos vendidos</div>
@@ -258,7 +262,8 @@ async function fetchVendas(){
         sit:normSit(get(r,['situacao','situaao','situação'])),
         cliente:get(r,['clientes','cliente']),
         custoUnit:pref?pref.custo:0,
-        mo:pref?pref.tempoMin:0,
+        mo:pref?pref.mo:0,
+        tempoMin:pref?pref.tempoMin:0,
       };
     }).filter(r=>r.data||r.produto||r.cliente);
     populateMeses();populateStatusFilter();renderVendas();
@@ -304,6 +309,8 @@ function filteredVendas(){
   return fv;
 }
 
+function pct(v,total){return total>0?(v/total*100).toFixed(1)+'%':'—';}
+
 function renderMetrics(fv){
   const pagas=fv.filter(v=>v.status==='Pago');
   const total=pagas.reduce((a,v)=>a+v.valor,0);
@@ -312,14 +319,60 @@ function renderMetrics(fv){
   const totalMO=pagas.reduce((a,v)=>a+(v.mo||0),0);
   const totalCusto=pagas.reduce((a,v)=>a+(v.custoUnit||0),0);
   const lucroLiq=total-totalCusto-totalMO;
+  const pctCusto=pct(totalCusto,total);
+  const pctMO=pct(totalMO,total);
+  const pctLucro=pct(lucroLiq,total);
   document.getElementById('metrics').innerHTML=`
-    <div class="metric"><div class="ml">Receita total</div><div class="mv">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="ms">vendas pagas</div></div>
-    <div class="metric"><div class="ml">Custo de material</div><div class="mv" style="color:#D85A30">- R$ ${totalCusto.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="ms">custo unitário total</div></div>
-    <div class="metric"><div class="ml">Mão de obra</div><div class="mv" style="color:#D85A30">- R$ ${totalMO.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="ms">MO das vendas pagas</div></div>
-    <div class="metric" style="background:#E1F5EE"><div class="ml" style="color:#085041">Lucro líquido</div><div class="mv" style="color:#085041">R$ ${lucroLiq.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="ms" style="color:#0F6E56">receita - custo - MO</div></div>
+    <div class="metric"><div class="ml">Receita total</div><div class="mv">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="ms">100% das vendas pagas</div></div>
+    <div class="metric"><div class="ml">Custo de material</div><div class="mv" style="color:#D85A30">- R$ ${totalCusto.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="ms" style="color:#D85A30;font-weight:500">${pctCusto} da receita</div></div>
+    <div class="metric"><div class="ml">Mão de obra</div><div class="mv" style="color:#D85A30">- R$ ${totalMO.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="ms" style="color:#D85A30;font-weight:500">${pctMO} da receita</div></div>
+    <div class="metric" style="background:#E1F5EE"><div class="ml" style="color:#085041">Lucro líquido</div><div class="mv" style="color:#085041">R$ ${lucroLiq.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="ms" style="color:#0F6E56;font-weight:500">${pctLucro} da receita</div></div>
     <div class="metric"><div class="ml">Pedidos</div><div class="mv">${fv.length}</div><div class="ms">${cortesias} cortesia(s)</div></div>
     <div class="metric"><div class="ml">Ticket médio</div><div class="mv">R$ ${ticket.toFixed(2).replace('.',',')}</div><div class="ms">pedidos pagos</div></div>
     <div class="metric"><div class="ml">Clientes únicos</div><div class="mv">${new Set(fv.map(v=>v.cliente).filter(Boolean)).size}</div><div class="ms">neste período</div></div>`;
+  renderHoras(fv);
+}
+
+function renderHoras(fv){
+  const pagas=fv.filter(v=>v.status==='Pago');
+  const totalMin=pagas.reduce((a,v)=>a+(v.tempoMin||0),0);
+  const totalH=totalMin/60;
+  const totalHStr=totalH>=1?Math.floor(totalH)+'h '+Math.round((totalH%1)*60)+'min':Math.round(totalMin)+'min';
+  const diasTrab=totalH>0?Math.ceil(totalH/5):0;
+
+  const byProd={};
+  pagas.filter(v=>v.produto&&v.tempoMin>0).forEach(v=>{
+    const k=v.produto;
+    if(!byProd[k])byProd[k]={nome:v.produto,totalMin:0,qtd:0};
+    byProd[k].totalMin+=v.tempoMin;
+    byProd[k].qtd++;
+  });
+  const sorted=Object.values(byProd).sort((a,b)=>b.totalMin-a.totalMin);
+  const maxMin=sorted.length?sorted[0].totalMin:1;
+
+  const barsHtml=sorted.map(d=>{
+    const hh=Math.floor(d.totalMin/60);
+    const mm=Math.round(d.totalMin%60);
+    const label=hh>0?hh+'h'+(mm>0?' '+mm+'min':''):mm+'min';
+    const w=Math.round((d.totalMin/maxMin)*180);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid rgba(0,0,0,0.05)">
+      <div style="flex:1;min-width:0;font-size:11px;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.nome}</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:${w}px;height:5px;border-radius:3px;background:#7F77DD;flex-shrink:0"></div>
+        <span style="font-size:11px;color:#6b6b68;white-space:nowrap">${label} · ${d.qtd}x</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('horas-content').innerHTML=totalMin===0
+    ? '<div style="font-size:12px;color:#9b9b97;padding:8px 0">Tempo de produção não disponível para este período. Verifique se os produtos estão cadastrados na aba de precificação.</div>'
+    : `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px">
+        <div class="metric"><div class="ml">Total trabalhado</div><div class="mv">${totalHStr}</div><div class="ms">no período selecionado</div></div>
+        <div class="metric"><div class="ml">Equiv. em dias (5h/dia)</div><div class="mv">${diasTrab} dia${diasTrab!==1?'s':''}</div><div class="ms">jornada de 5h</div></div>
+        <div class="metric"><div class="ml">Média por venda</div><div class="mv">${pagas.length?Math.round(totalMin/pagas.length)+'min':'—'}</div><div class="ms">tempo médio por pedido</div></div>
+      </div>
+      <div style="font-size:11px;font-weight:500;color:#6b6b68;margin-bottom:8px">Tempo por produto</div>
+      ${barsHtml}`;
 }
 
 function renderCharts(fv){
@@ -417,7 +470,8 @@ async function fetchPrecificacao(){
       categoria: get(r,['categoria']),
       custo: parseValor(get(r,['custo unitario','custo_unitario','custo unitário','custo'])),
       precoAtual: parseValor(get(r,['preco venda','preco_venda','preço venda','preço de venda','preco'])),
-      tempoMin: parseInt(get(r,['tempo','tempo min','tempo (min)']))||60,
+      mo: parseValor(get(r,['mao de obra','mao_de_obra','mão de obra','mo'])),
+      tempoMin: parseInt(get(r,['tempo(min)','tempo (min)','tempo min','tempo']))||0,
     })).filter(r=>r.nome);
     produtos.forEach(p=>{ if(!tempos[p.cod]) tempos[p.cod]=p.tempoMin; });
     document.getElementById('p-loadingBox').style.display='none';
