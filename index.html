@@ -268,6 +268,7 @@ async function fetchVendas(){
   try{
     const text=await tryFetch(VENDAS_URL);
     const rows=parseCSV(text,l=>{const n=norm(l);return n.includes('data')&&(n.includes('produto')||n.includes('valor'));});
+    console.log('Produtos carregados para cruzamento:', produtos.length, produtos.slice(0,2));
     allVendas=rows.map(r=>{
       const cod=get(r,['cod_produto','cod produto','codigo']);
       const pref=produtos.find(p=>String(p.cod).trim()===String(cod).trim());
@@ -284,6 +285,7 @@ async function fetchVendas(){
         tempoMin:pref?pref.tempoMin:0,
       };
     }).filter(r=>r.data||r.produto||r.cliente);
+    console.log('Vendas mapeadas (primeiras 2):', allVendas.slice(0,2).map(v=>({cod:v.cod,produto:v.produto,mo:v.mo,tempoMin:v.tempoMin,custoUnit:v.custoUnit})));
     populateMeses();populateStatusFilter();renderVendas();
     document.getElementById('loadingBox').style.display='none';
     document.getElementById('vendas-content').style.display='block';
@@ -471,7 +473,7 @@ document.getElementById('sortBtns').addEventListener('click',e=>{
 document.getElementById('refreshBtn').addEventListener('click',()=>{fetchPrecificacao().then(()=>fetchVendas());});
 
 /* ── PRECIFICAÇÃO ── */
-const PREC_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vStwozPUCnYfE3O-EJVpTrQtgdsttloV1O57Bw_WPLArse5TIUDozd48vz5rTid-Eartf3D92EczYhR/pub?output=csv';
+const PREC_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vStwozPUCnYfE3O-EJVpTrQtgdsttloV1O57Bw_WPLArse5TIUDozd48vz5rTid-Eartf3D92EczYhR/pub?gid=21694616&single=true&output=csv';
 let produtos=[];
 const tempos={};
 
@@ -483,14 +485,14 @@ async function fetchPrecificacao(){
     const rows=parseCSV(text,l=>{const n=norm(l);return(n.includes('codigo')||n.includes('produto'))&&n.includes('preco');});
     if(!rows.length) throw new Error('Não foi possível encontrar os dados de precificação. Verifique os cabeçalhos da aba.');
     produtos=rows.map(r=>{
-      const moVal=parseValor(getAny(r,['mao de obra','mao_de_obra','mao de obra','mo']));
-      const tempoVal=parseInt(getAny(r,['tempo(min)','tempo (min)','tempmin','tempo min','tempo']))||0;
+      const moVal=parseValor(r['mao de obra']||'');
+      const tempoVal=parseInt(r['tempo(min)']||r['tempo (min)']||'')||0;
       return {
-        cod: getAny(r,['codigo','cod','cod_produto','code']),
-        nome: getAny(r,['produto','produtos','nome']),
-        categoria: getAny(r,['categoria']),
-        custo: parseValor(getAny(r,['custo unitario','custo_unitario','custo unitario','custo'])),
-        precoAtual: parseValor(getAny(r,['preco venda','preco_venda','preco de venda','preco'])),
+        cod: r['codigo']||'',
+        nome: r['produto']||'',
+        categoria: r['categoria']||'',
+        custo: parseValor(r['custo unitario']||''),
+        precoAtual: parseValor(r['preco venda']||''),
         mo: moVal,
         tempoMin: tempoVal>0 ? tempoVal : (moVal>0 ? Math.round((moVal/18)*60) : 45),
       };
