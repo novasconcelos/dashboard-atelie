@@ -71,11 +71,10 @@ input[type=number]{width:62px;padding:3px 5px;font-size:11px;border:0.5px solid 
 <nav>
   <span class="nav-brand">Ateliê</span>
   <button class="nav-tab active" data-page="vendas">Vendas</button>
-  <button class="nav-tab" data-page="precificacao">Precificação</button>
+  <a href="calculadora.html" class="nav-tab" style="text-decoration:none;display:flex;align-items:center;gap:4px">Precificação<span style="font-size:10px">↗</span></a>
   <button class="nav-tab" data-page="simulador">Simulador</button>
   <div class="nav-right">
-    <span style="font-size:10px;color:#9b9b97;padding:0 8px;border-right:0.5px solid rgba(0,0,0,0.08)">v1.4</span>
-    <a href="calculadora.html" style="font-size:12px;padding:5px 12px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.2);background:#1D9E75;color:#fff;text-decoration:none;font-weight:500;white-space:nowrap">Calculadora de preços</a>
+    <span style="font-size:10px;color:#9b9b97;padding:0 8px">v1.5</span>
     <span class="last-update" id="lastUpdate"></span>
     <button class="refresh-btn" id="refreshBtn">Atualizar</button>
   </div>
@@ -136,48 +135,6 @@ input[type=number]{width:62px;padding:3px 5px;font-size:11px;border:0.5px solid 
         <table>
           <thead><tr><th>Data</th><th>Cód.</th><th>Produto</th><th>Cliente</th><th class="r">Valor</th><th>Status</th><th>Situação</th></tr></thead>
           <tbody id="tbody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- PRECIFICAÇÃO -->
-<div class="page" id="page-precificacao">
-  <div id="p-loadingBox" class="loading" style="display:none">Buscando dados de precificação...</div>
-  <div id="p-errorBox" class="error-box" style="display:none"></div>
-  <div id="p-content">
-    <div class="card">
-      <div style="font-size:13px;font-weight:500;margin-bottom:1rem">Parâmetros base</div>
-      <div class="prow"><label>Meta mensal (R$)</label><input type="range" id="meta" min="1500" max="2500" step="50" value="2000"><span class="val-out" id="meta-out">R$ 2.000</span></div>
-      <div class="prow"><label>Horas trabalhadas por dia</label><input type="range" id="horas" min="4" max="6" step="0.5" value="5"><span class="val-out" id="horas-out">5h</span></div>
-      <div class="prow" style="margin-bottom:1.2rem"><label>Dias úteis por mês</label><input type="range" id="dias" min="18" max="26" step="1" value="22"><span class="val-out" id="dias-out">22 dias</span></div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px" id="pmetrics"></div>
-    </div>
-    <div class="card">
-      <div style="font-size:13px;font-weight:500;margin-bottom:6px">
-        Precificação por produto com mão de obra real
-        <span class="badge-new">preço sugerido</span>
-      </div>
-      <p class="hint">Tempo de produção editável direto na tabela. Dados carregados da planilha.</p>
-      <div class="tbl-wrap">
-        <table style="table-layout:fixed">
-          <thead>
-            <tr>
-              <th style="width:5%">Cód.</th>
-              <th style="width:22%">Produto</th>
-              <th style="width:8%" class="r">Categoria</th>
-              <th style="width:9%" class="r">Custo mat.</th>
-              <th style="width:9%" class="r">Tempo (min)</th>
-              <th style="width:9%" class="r">MO real</th>
-              <th style="width:9%" class="r">Custo total</th>
-              <th style="width:9%" class="r">Preço atual</th>
-              <th style="width:10%" class="r">Preço sugerido</th>
-              <th style="width:8%" class="r">Margem</th>
-              <th style="width:5%" class="r">Status</th>
-            </tr>
-          </thead>
-          <tbody id="ptbody"></tbody>
         </table>
       </div>
     </div>
