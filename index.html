@@ -72,9 +72,10 @@ input[type=number]{width:62px;padding:3px 5px;font-size:11px;border:0.5px solid 
   <span class="nav-brand">Ateliê</span>
   <button class="nav-tab active" data-page="vendas">Vendas</button>
   <button class="nav-tab" data-page="precificacao">Precificação</button>
+  <button class="nav-tab" data-page="relatorio">Relatório</button>
   <button class="nav-tab" data-page="simulador">Simulador</button>
   <div class="nav-right">
-    <span style="font-size:10px;color:#9b9b97;padding:0 8px">v1.6</span>
+    <span style="font-size:10px;color:#9b9b97;padding:0 8px">v1.8</span>
     <span class="last-update" id="lastUpdate"></span>
     <button class="refresh-btn" id="refreshBtn">Atualizar</button>
   </div>
@@ -190,6 +191,54 @@ input[type=number]{width:62px;padding:3px 5px;font-size:11px;border:0.5px solid 
   </div>
 </div>
 
+<!-- RELATÓRIO MENSAL -->
+<div class="page" id="page-relatorio">
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+      <div>
+        <div style="font-size:13px;font-weight:500">Relatório mensal</div>
+        <p style="font-size:11px;color:#9b9b97;margin-top:2px">Análise completa de receita, custos e lucratividade por mês</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <label style="font-size:12px;color:#6b6b68">Mês:</label>
+          <select id="relMes" style="padding:6px 10px;font-size:12px;border:0.5px solid rgba(0,0,0,0.18);border-radius:6px;background:#fff;color:#1a1a1a">
+            <option value="todos">Todos os meses</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label style="font-size:12px;color:#6b6b68">Valor/hora:</label>
+          <input type="number" id="relValorHora" min="10" max="200" step="0.5" value="80" style="width:70px;padding:6px 8px;font-size:12px;font-weight:500;border:0.5px solid rgba(0,0,0,0.18);border-radius:6px;background:#fff;color:#1a1a1a;text-align:right">
+        </div>
+      </div>
+    </div>
+
+    <div class="metric-grid" id="rel-metrics" style="margin-bottom:20px"></div>
+
+    <div id="rel-comparativo" style="margin-bottom:20px"></div>
+  </div>
+
+  <div class="card">
+    <div style="font-size:13px;font-weight:500;margin-bottom:12px">Evolução mensal</div>
+    <div style="position:relative;height:280px;margin-bottom:8px">
+      <canvas id="relChartEvolucao" role="img" aria-label="Evolução de receita e lucro por mês"></canvas>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;margin-bottom:12px">Top produtos por lucro</div>
+      <div id="rel-topProdutos"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;margin-bottom:12px">Composição da receita</div>
+      <div style="position:relative;height:220px">
+        <canvas id="relChartComposicao" role="img" aria-label="Composição da receita: custo, MO e lucro"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- SIMULADOR -->
 <div class="page" id="page-simulador">
   <div class="card">
@@ -236,6 +285,42 @@ input[type=number]{width:62px;padding:3px 5px;font-size:11px;border:0.5px solid 
         <div style="font-size:11px;color:#6b6b68;background:#f5f4f0;border-radius:6px;padding:8px 10px"><span style="color:#378ADD;font-weight:500">Mão de obra</span><br>ideal: 25–35%</div>
         <div style="font-size:11px;color:#6b6b68;background:#f5f4f0;border-radius:6px;padding:8px 10px"><span style="color:#1D9E75;font-weight:500">Lucro</span><br>ideal: 40–55%</div>
       </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-size:13px;font-weight:500;margin-bottom:4px">Calculadora reversa: descubra sua margem ideal</div>
+    <p style="font-size:11px;color:#9b9b97;margin-bottom:16px">Você já tem um preço em mente? Veja como dividir de forma saudável entre custo, mão de obra e lucro.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;margin-bottom:20px">
+      <div>
+        <label style="font-size:12px;color:#6b6b68;display:block;margin-bottom:4px">Preço atual/desejado (R$)</label>
+        <input type="number" id="rev-preco" min="1" max="2000" step="5" value="150" style="width:100%;padding:6px 8px;font-size:14px;font-weight:500;border:0.5px solid rgba(0,0,0,0.18);border-radius:6px;background:#fff;color:#1a1a1a;text-align:right">
+      </div>
+      <div>
+        <label style="font-size:12px;color:#6b6b68;display:block;margin-bottom:4px">Custo do material (R$)</label>
+        <input type="number" id="rev-custo" min="0" max="1000" step="1" value="30" style="width:100%;padding:6px 8px;font-size:14px;font-weight:500;border:0.5px solid rgba(0,0,0,0.18);border-radius:6px;background:#fff;color:#1a1a1a;text-align:right">
+      </div>
+      <div>
+        <label style="font-size:12px;color:#6b6b68;display:block;margin-bottom:4px">Tempo de produção (min)</label>
+        <input type="number" id="rev-tempo" min="5" max="480" step="5" value="45" style="width:100%;padding:6px 8px;font-size:14px;font-weight:500;border:0.5px solid rgba(0,0,0,0.18);border-radius:6px;background:#fff;color:#1a1a1a;text-align:right">
+      </div>
+      <div>
+        <label style="font-size:12px;color:#6b6b68;display:block;margin-bottom:4px">Valor agregado (%)</label>
+        <input type="range" id="rev-agregado" min="0" max="100" step="5" value="0" style="width:100%">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#9b9b97;margin-top:2px">
+          <span>Simples</span>
+          <span id="rev-agregado-val" style="font-weight:500;color:#1a1a1a">0%</span>
+          <span>Exclusivo</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="rev-result" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px"></div>
+
+    <div style="border-top:0.5px solid rgba(0,0,0,0.08);padding-top:12px;margin-top:16px">
+      <div style="font-size:11px;font-weight:500;color:#6b6b68;margin-bottom:6px">Como funciona o valor agregado?</div>
+      <p style="font-size:11px;color:#9b9b97;line-height:1.5">O valor agregado aumenta a margem de MO mesmo em produtos rápidos. Use para: técnicas especiais (pintura à mão, bordado), design exclusivo, edição limitada, personalização detalhada. Quanto mais único o produto, maior o agregado.</p>
     </div>
   </div>
 </div>
@@ -311,7 +396,7 @@ function parseValor(v){if(!v)return 0;return parseFloat(v.replace(/R\$|\s/g,'').
 
 /* ── VENDAS ── */
 const VENDAS_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vStwozPUCnYfE3O-EJVpTrQtgdsttloV1O57Bw_WPLArse5TIUDozd48vz5rTid-Eartf3D92EczYhR/pub?gid=2115485472&single=true&output=csv';
-let allVendas=[],sortMode='receita',mesFiltro='todos',statusFiltro='todos',sitFiltro='todos';
+let allVendas=[],mesesDisponiveis=[],sortMode='receita',mesFiltro='todos',statusFiltro='todos',sitFiltro='todos';
 let chartStatus=null,chartSit=null;
 const stColors=['#1D9E75','#7F77DD','#EF9F27','#D85A30','#D4537E','#378ADD'];
 const sitColors=['#1D9E75','#EF9F27','#7F77DD','#D85A30'];
@@ -345,7 +430,7 @@ async function fetchVendas(){
         tempoMin:pref?pref.tempoMin:0,
       };
     }).filter(r=>r.data||r.produto||r.cliente);
-    populateMeses();populateStatusFilter();renderVendas();
+    populateMeses();populateStatusFilter();renderVendas();populateRelMeses();renderRelatorio();
     document.getElementById('loadingBox').style.display='none';
     document.getElementById('vendas-content').style.display='block';
     const now=new Date();
@@ -359,10 +444,10 @@ async function fetchVendas(){
 }
 
 function populateMeses(){
-  const meses=[...new Set(allVendas.map(v=>v.mes).filter(Boolean))];
+  mesesDisponiveis=[...new Set(allVendas.map(v=>v.mes).filter(Boolean))];
   const sel=document.getElementById('selMes');
   sel.innerHTML='<option value="todos">Todos os meses</option>';
-  meses.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;sel.appendChild(o);});
+  mesesDisponiveis.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;sel.appendChild(o);});
 }
 
 function populateStatusFilter(){
@@ -793,6 +878,251 @@ function updateSim(){
 }
 ['sim-preco','sim-custo','sim-tempo','sim-hora'].forEach(id=>document.getElementById(id).addEventListener('input',updateSim));
 updateSim();
+
+/* ── CALCULADORA REVERSA ── */
+function updateRev(){
+  const preco=parseFloat(document.getElementById('rev-preco').value)||150;
+  const custo=parseFloat(document.getElementById('rev-custo').value)||0;
+  const tempo=parseFloat(document.getElementById('rev-tempo').value)||45;
+  const agregado=parseFloat(document.getElementById('rev-agregado').value)||0;
+  
+  document.getElementById('rev-agregado-val').textContent=Math.round(agregado)+'%';
+  
+  const disponivel=preco-custo;
+  if(disponivel<=0){
+    document.getElementById('rev-result').innerHTML='<div style="grid-column:1/-1;padding:1rem;text-align:center;color:#791F1F;font-size:12px">O custo do material é igual ou maior que o preço. Ajuste os valores.</div>';
+    return;
+  }
+
+  // Classificação base por tempo
+  let moBase,lucroBase,perfil;
+  if(tempo<=30){
+    moBase=0.27;lucroBase=0.42;perfil='Simples';
+  }else if(tempo<=60){
+    moBase=0.32;lucroBase=0.47;perfil='Médio';
+  }else{
+    moBase=0.37;lucroBase=0.52;perfil='Complexo';
+  }
+
+  // Ajuste por valor agregado
+  const ajuste=agregado/100*0.10; // +10% MO no máximo
+  const moAjustada=Math.min(0.40,moBase+ajuste);
+
+  // Três cenários
+  const cenarios=[
+    {nome:'Conservador',sub:'Iniciante',moP:Math.max(0.25,moAjustada-0.05),lucroP:0.40,cor:'#BA7517'},
+    {nome:'Equilibrado',sub:'Intermediário',moP:moAjustada,lucroP:Math.min(0.55,lucroBase),cor:'#1D9E75'},
+    {nome:'Premium',sub:'Avançado',moP:Math.min(0.40,moAjustada+0.05),lucroP:Math.min(0.55,lucroBase+0.05),cor:'#085041'}
+  ];
+
+  const fmt=v=>'R$ '+v.toFixed(2).replace('.',',');
+  const cards=cenarios.map(c=>{
+    const moVal=disponivel*c.moP;
+    const lucroVal=disponivel*c.lucroP;
+    const total=custo+moVal+lucroVal;
+    const sobra=preco-total;
+    const ok=sobra>=0&&(custo/preco*100)<=25;
+    
+    return `<div style="background:#fff;border:2px solid ${c.cor};border-radius:8px;padding:12px 14px">
+      <div style="font-size:11px;color:${c.cor};font-weight:500;margin-bottom:2px">${c.nome}</div>
+      <div style="font-size:10px;color:#9b9b97;margin-bottom:10px">${c.sub} · ${perfil.toLowerCase()}</div>
+      <div style="margin-bottom:8px">
+        <div style="font-size:10px;color:#6b6b68">Mão de obra</div>
+        <div style="font-size:16px;font-weight:500;color:#378ADD">${fmt(moVal)}</div>
+        <div style="font-size:9px;color:#9b9b97">${Math.round(c.moP*100)}% do disponível</div>
+      </div>
+      <div style="margin-bottom:8px">
+        <div style="font-size:10px;color:#6b6b68">Lucro líquido</div>
+        <div style="font-size:16px;font-weight:500;color:#1D9E75">${fmt(lucroVal)}</div>
+        <div style="font-size:9px;color:#9b9b97">${Math.round(c.lucroP*100)}% do disponível</div>
+      </div>
+      <div style="border-top:0.5px solid rgba(0,0,0,0.08);padding-top:8px;margin-top:8px">
+        <div style="font-size:9px;color:#6b6b68;margin-bottom:2px">Resumo do preço</div>
+        <div style="font-size:10px;color:#6b6b68">Custo ${fmt(custo)} + MO ${fmt(moVal)} + Lucro ${fmt(lucroVal)}</div>
+        <div style="font-size:10px;font-weight:500;margin-top:4px;color:${ok?'#085041':'#791F1F'}">${ok?'✓':'✗'} Total: ${fmt(total)} ${sobra>=0?'(sobra '+fmt(sobra)+')':'(falta '+fmt(Math.abs(sobra))+')'}</div>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('rev-result').innerHTML=cards.join('');
+}
+['rev-preco','rev-custo','rev-tempo','rev-agregado'].forEach(id=>document.getElementById(id).addEventListener('input',updateRev));
+updateRev();
+
+/* ── RELATÓRIO MENSAL ── */
+let relChartEvolucao,relChartComposicao;
+let relMesSel='todos';
+
+function getRelValorHora(){return parseFloat(document.getElementById('relValorHora')?.value)||80;}
+
+function renderRelatorio(){
+  const vh=getRelValorHora();
+  const vendas=allVendas.filter(v=>v.status==='Pago'&&(relMesSel==='todos'||v.mes===relMesSel));
+  
+  if(!vendas.length){
+    document.getElementById('rel-metrics').innerHTML='<div style="grid-column:1/-1;padding:2rem;text-align:center;color:#9b9b97;font-size:13px">Nenhuma venda encontrada para este período.</div>';
+    return;
+  }
+
+  const totalReceita=vendas.reduce((a,v)=>a+v.valor,0);
+  const totalCusto=vendas.reduce((a,v)=>a+(v.custoUnit||0),0);
+  const totalMO=vendas.reduce((a,v)=>a+((v.tempoMin||0)/60)*vh,0);
+  const totalLucro=totalReceita-totalCusto-totalMO;
+  const totalMin=vendas.reduce((a,v)=>a+(v.tempoMin||0),0);
+  const totalH=totalMin/60;
+  const ticket=totalReceita/vendas.length;
+
+  const pctCusto=totalReceita>0?(totalCusto/totalReceita*100):0;
+  const pctMO=totalReceita>0?(totalMO/totalReceita*100):0;
+  const pctLucro=totalReceita>0?(totalLucro/totalReceita*100):0;
+
+  const corC=pctCusto>30?'#A32D2D':pctCusto>25?'#BA7517':'#1D9E75';
+  const corM=pctMO>40?'#A32D2D':pctMO<25?'#BA7517':pctMO>35?'#BA7517':'#378ADD';
+  const corL=pctLucro<30?'#A32D2D':pctLucro<40?'#BA7517':'#1D9E75';
+
+  const fmt=v=>'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  
+  document.getElementById('rel-metrics').innerHTML=`
+    <div class="metric" style="background:#E1F5EE"><div class="ml" style="color:#085041">Receita total</div><div class="mv" style="color:#085041">${fmt(totalReceita)}</div><div class="ms" style="color:#085041">${vendas.length} venda${vendas.length>1?'s':''}</div></div>
+    <div class="metric"><div class="ml">Custo material</div><div class="mv" style="color:${corC}">${fmt(totalCusto)}</div><div class="ms" style="color:${corC};font-weight:500">${Math.round(pctCusto)}% da receita</div></div>
+    <div class="metric"><div class="ml">Mão de obra</div><div class="mv" style="color:${corM}">${fmt(totalMO)}</div><div class="ms" style="color:${corM};font-weight:500">${Math.round(pctMO)}% da receita</div></div>
+    <div class="metric" style="background:${pctLucro>=40?'#E1F5EE':'#fff8f0'}"><div class="ml" style="color:${pctLucro>=40?'#085041':'#6b6b68'}">Lucro líquido</div><div class="mv" style="color:${corL}">${fmt(totalLucro)}</div><div class="ms" style="color:${corL};font-weight:500">${Math.round(pctLucro)}% da receita</div></div>
+    <div class="metric"><div class="ml">Horas trabalhadas</div><div class="mv">${Math.floor(totalH)}h ${Math.round((totalH%1)*60)}min</div><div class="ms">${Math.ceil(totalH/5)} dias úteis (5h/dia)</div></div>
+    <div class="metric"><div class="ml">Ticket médio</div><div class="mv">${fmt(ticket)}</div><div class="ms">por venda</div></div>`;
+
+  renderRelComparativo(vendas,vh);
+  renderRelEvolucao(vh);
+  renderRelTopProdutos(vendas,vh);
+  renderRelComposicao(totalCusto,totalMO,totalLucro);
+}
+
+function renderRelComparativo(vendas,vh){
+  if(relMesSel==='todos'){
+    document.getElementById('rel-comparativo').innerHTML='';
+    return;
+  }
+  const idx=mesesDisponiveis.indexOf(relMesSel);
+  if(idx<=0){
+    document.getElementById('rel-comparativo').innerHTML='';
+    return;
+  }
+  const mesAnt=mesesDisponiveis[idx-1];
+  const vendasAnt=allVendas.filter(v=>v.status==='Pago'&&v.mes===mesAnt);
+  
+  const receitaAtual=vendas.reduce((a,v)=>a+v.valor,0);
+  const receitaAnt=vendasAnt.reduce((a,v)=>a+v.valor,0);
+  const lucroAtual=vendas.reduce((a,v)=>a+(v.valor-(v.custoUnit||0)-((v.tempoMin||0)/60)*vh),0);
+  const lucroAnt=vendasAnt.reduce((a,v)=>a+(v.valor-(v.custoUnit||0)-((v.tempoMin||0)/60)*vh),0);
+
+  const varReceita=receitaAnt>0?((receitaAtual-receitaAnt)/receitaAnt*100):0;
+  const varLucro=lucroAnt>0?((lucroAtual-lucroAnt)/lucroAnt*100):0;
+
+  const fmt=v=>'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmtVar=v=>(v>=0?'+':'')+v.toFixed(1).replace('.',',')+'%';
+  const corVar=v=>v>=10?'#1D9E75':v>=0?'#378ADD':v>-10?'#BA7517':'#A32D2D';
+
+  document.getElementById('rel-comparativo').innerHTML=`
+    <div style="background:#f5f4f0;border-radius:8px;padding:12px 14px">
+      <div style="font-size:11px;color:#6b6b68;margin-bottom:8px">Comparativo com ${mesAnt}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <div style="font-size:10px;color:#6b6b68">Receita</div>
+          <div style="font-size:14px;font-weight:500">${fmt(receitaAtual)} <span style="font-size:11px;color:${corVar(varReceita)};font-weight:500">${fmtVar(varReceita)}</span></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:#6b6b68">Lucro</div>
+          <div style="font-size:14px;font-weight:500">${fmt(lucroAtual)} <span style="font-size:11px;color:${corVar(varLucro)};font-weight:500">${fmtVar(varLucro)}</span></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderRelEvolucao(vh){
+  const byMes={};
+  mesesDisponiveis.forEach(m=>{
+    const v=allVendas.filter(x=>x.status==='Pago'&&x.mes===m);
+    const rec=v.reduce((a,x)=>a+x.valor,0);
+    const cus=v.reduce((a,x)=>a+(x.custoUnit||0),0);
+    const mo=v.reduce((a,x)=>a+((x.tempoMin||0)/60)*vh,0);
+    byMes[m]={receita:rec,custo:cus,mo:mo,lucro:rec-cus-mo};
+  });
+
+  const labels=mesesDisponiveis;
+  const dataRec=labels.map(m=>byMes[m]?.receita||0);
+  const dataLuc=labels.map(m=>byMes[m]?.lucro||0);
+
+  if(relChartEvolucao)relChartEvolucao.destroy();
+  relChartEvolucao=new Chart(document.getElementById('relChartEvolucao'),{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        {label:'Receita',data:dataRec,backgroundColor:'#85B7EB',borderWidth:0},
+        {label:'Lucro',data:dataLuc,backgroundColor:'#5DCAA5',borderWidth:0}
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'top',labels:{boxWidth:12,font:{size:11}}}},
+      scales:{y:{beginAtZero:true,ticks:{callback:v=>'R$ '+v.toFixed(0)}}}
+    }
+  });
+}
+
+function renderRelTopProdutos(vendas,vh){
+  const byProd={};
+  vendas.forEach(v=>{
+    const k=v.produto||'Sem nome';
+    if(!byProd[k])byProd[k]={nome:k,qtd:0,receita:0,lucro:0};
+    byProd[k].qtd++;
+    byProd[k].receita+=v.valor;
+    byProd[k].lucro+=v.valor-(v.custoUnit||0)-((v.tempoMin||0)/60)*vh;
+  });
+  const sorted=Object.values(byProd).sort((a,b)=>b.lucro-a.lucro).slice(0,5);
+  const fmt=v=>'R$ '+v.toFixed(2).replace('.',',');
+  
+  const html=sorted.map((p,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid rgba(0,0,0,0.05)">
+      <div style="width:20px;height:20px;border-radius:50%;background:#E1F5EE;color:#085041;font-size:10px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nome}</div>
+        <div style="font-size:10px;color:#9b9b97">${p.qtd} venda${p.qtd>1?'s':''} · ${fmt(p.receita)} receita</div>
+      </div>
+      <div style="font-size:12px;font-weight:500;color:#1D9E75">${fmt(p.lucro)}</div>
+    </div>
+  `).join('');
+  
+  document.getElementById('rel-topProdutos').innerHTML=html||'<div style="padding:1rem;text-align:center;color:#9b9b97;font-size:11px">Nenhum produto vendido</div>';
+}
+
+function renderRelComposicao(custo,mo,lucro){
+  if(relChartComposicao)relChartComposicao.destroy();
+  relChartComposicao=new Chart(document.getElementById('relChartComposicao'),{
+    type:'doughnut',
+    data:{
+      labels:['Custo material','Mão de obra','Lucro'],
+      datasets:[{data:[custo,mo,lucro],backgroundColor:['#F0997B','#85B7EB','#5DCAA5'],borderWidth:0}]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,position:'bottom',labels:{boxWidth:10,font:{size:11},padding:8}},
+        tooltip:{callbacks:{label:ctx=>ctx.label+': R$ '+ctx.parsed.toFixed(2)+' ('+Math.round(ctx.parsed/(custo+mo+lucro)*100)+'%)'}}
+      }
+    }
+  });
+}
+
+function populateRelMeses(){
+  const sel=document.getElementById('relMes');
+  sel.innerHTML='<option value="todos">Todos os meses</option>'+mesesDisponiveis.map(m=>`<option value="${m}">${m}</option>`).join('');
+  sel.value=relMesSel;
+}
+
+document.getElementById('relMes')?.addEventListener('change',e=>{relMesSel=e.target.value;renderRelatorio();});
+document.getElementById('relValorHora')?.addEventListener('input',renderRelatorio);
 
 /* ── INIT ── */
 fetchPrecificacao().then(()=>{initPrecTab();fetchVendas();});
